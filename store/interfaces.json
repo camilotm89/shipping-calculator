@@ -1,0 +1,8 @@
+{
+    "shipping-calculator-modal":{
+        "component": "ShippingCalculatorModal"
+    },
+    "hola":{
+        "component": "Hola"
+    }
+}

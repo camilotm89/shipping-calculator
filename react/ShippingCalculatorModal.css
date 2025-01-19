@@ -1,0 +1,16 @@
+:global(.postal-code-input){
+    display: flex;
+    align-items: center;
+    border: 1px solid green;
+    border-radius: 18px;
+    padding-left: 10px;
+    padding-right: 10px;
+    justify-content: space-between;
+}
+:global(.postal-code-input input) {
+    border: none;
+    outline: none;
+    display: flex;
+    max-width: fit-content;
+    
+  }
