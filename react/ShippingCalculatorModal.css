@@ -14,3 +14,18 @@
     max-width: fit-content;
     
   }
+
+  :global(.vtex-styleguide-9-x-shadowTransition){
+    background-color: rgb(61, 145, 42) !important;
+    color: white !important;
+    margin-bottom: 30px !important;
+  }
+
+  :global(.f3){
+    color: white !important;
+  }
+
+  :global(.c-action-primary){
+    color:  rgb(61, 145, 42) !important;
+  }
+  

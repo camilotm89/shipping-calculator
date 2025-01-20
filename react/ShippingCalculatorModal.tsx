@@ -1,17 +1,24 @@
 import React, { useState } from 'react'
 import { Modal, Button } from 'vtex.styleguide'
 import './ShippingCalculatorModal.css'
+import {useProduct} from 'vtex.product-context'
 
 const ShippingCalculatorModal: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [postalCode, setPostalCode] = useState('')
-  const [shippingOptions, setShippingOptions] = useState<any[]>([])
+  const [deliveryShippingOptions, setDeliveryShippingOptions] = useState<any[]>([])
+  const [deliveryPickupOptions, setDeliveryPickupOptions] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+
+  const productContext = useProduct() // Obtén el contexto del producto
+  const skuId = productContext?.selectedItem?.itemId // 
 
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen)
     setPostalCode('')
-    setShippingOptions([])
+    setDeliveryShippingOptions([])
+    setDeliveryPickupOptions([])
+    
   }
 
   const fetchShippingOptions = async () => {
@@ -25,7 +32,7 @@ const ShippingCalculatorModal: React.FC = () => {
         body: JSON.stringify({
           items: [
             {
-              id: 1, 
+              id: skuId, 
               quantity: 1,
               seller: '1',
             },
@@ -37,14 +44,25 @@ const ShippingCalculatorModal: React.FC = () => {
 
       const data = await response.json()
       if (data?.logisticsInfo?.length) {
-        const options = data.logisticsInfo[1].slas.map((sla: any) => ({
-          name: sla.name,
-          price: sla.price / 100,
-          deliveryTime: sla.shippingEstimate,
-        }))
-        setShippingOptions(options)
+        
+        const deliverys = data.logisticsInfo[1].slas.filter((sla: any) => sla.deliveryChannel =="delivery")
+        const pickUpPoints = data.logisticsInfo[1].slas.filter((sla: any) => sla.deliveryChannel =="pickup-in-point")
+        
+        
+        
+        setDeliveryShippingOptions(deliverys.map((sla: any) => ({
+            name: sla.name,
+            price: sla.price / 100,
+            deliveryTime: sla.shippingEstimate,
+          })))
+        setDeliveryPickupOptions(pickUpPoints.map((sla: any) => ({
+            name: sla.name,
+            price: sla.price / 100,
+            deliveryTime: sla.shippingEstimate,
+          })))
       } else {
-        setShippingOptions([])
+        setDeliveryShippingOptions([])
+        setDeliveryPickupOptions([])
       }
     } catch (error) {
       console.error('Error fetching shipping options:', error)
@@ -66,6 +84,7 @@ const ShippingCalculatorModal: React.FC = () => {
         isOpen={isModalOpen}
         onClose={toggleModal}
         title="Calcular costo de envío"
+        
       >
         <div>
             <div className='postal-code-input'>
@@ -81,23 +100,55 @@ const ShippingCalculatorModal: React.FC = () => {
             disabled={!postalCode}
             style={{ marginTop: '10px' }}
             variation="tertiary"
+            
           >
             Calcular Envío
           </Button>
           </div>
-          <div style={{ marginTop: '20px' }}>
-            {shippingOptions.length > 0 ? (
-              <ul>
-                {shippingOptions.map((option, index) => (
-                  <li key={index}>
-                    {option.name} - ${option.price.toFixed(2)} - {option.deliveryTime}
-                  </li>
-                ))}
-              </ul>
+            <div style={{ marginTop: '20px' }} className="shipping-table">
+                {deliveryShippingOptions.length > 0 || deliveryPickupOptions.length>0 ? (
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                    <tr>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Tipo de envío</th>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Tiempo estimado</th>
+                    <th style={{ textAlign: 'left', padding: '8px' }}>Costo</th>
+                    </tr>
+                    <tr>
+                        <td style={{color:"green", fontWeight:"bolder", textAlign: 'left', padding: '8px',}}>Envío a domicilio</td>
+                        <td></td>
+                        <td> <img src={require('./assets/delivery.png')} style={{height:'30px', padding:"8px"}} ></img> </td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {deliveryShippingOptions.map((option, index) => (
+                    <tr key={index}>
+                        <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>{option.name}</td>
+                        <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}> Hasta {option.deliveryTime.replace("bd", "")} días hábiles</td>
+                        <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>${option.price.toFixed(2)}</td>
+                    </tr>
+                    
+                    ))}
+                    <tr>
+                        <td style={{color:"green", fontWeight:"bolder", textAlign: 'left', padding: '8px',}}>Punto de retiro</td>
+                        <td></td>
+                        <td><img src={require('./assets/pickup.png')} style={{height:'30px', padding:"8px"}} ></img></td>
+                    </tr>
+                    {deliveryPickupOptions.map((option, index) => (
+                    <tr key={index}>
+                        <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>{option.name}</td>
+                        <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}> Hasta {option.deliveryTime.replace("bd", "")} días hábiles</td>
+                        <td style={{ padding: '8px', borderBottom: '1px solid #ddd' }}>${option.price.toFixed(2)}</td>
+                    </tr>
+                    
+                    ))}
+                </tbody>
+                </table>
             ) : (
-              !loading && <p>No hay opciones de envío disponibles.</p>
+                !loading && <p>No hay opciones de envío disponibles.</p>
             )}
-          </div>
+            </div>
+
         </div>
       </Modal>
     </div>
